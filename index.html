@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Volt Connect Hub</title>
+<meta charset="UTF-8">
+
+<style>
+body{
+font-family:Arial,sans-serif;
+background:#f5f7fa;
+margin:0;
+padding:20px;
+}
+
+.header{
+background:#2563eb;
+color:white;
+padding:15px;
+border-radius:10px;
+}
+
+.card{
+background:white;
+padding:20px;
+margin-top:15px;
+border-radius:10px;
+box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+button{
+background:#2563eb;
+color:white;
+border:none;
+padding:10px 15px;
+border-radius:6px;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<h1>Volt Connect Hub</h1>
+<p>Smart Callback & Lead Management Platform</p>
+</div>
+
+<div class="card">
+<h3>System Status</h3>
+<p>✅ GitHub Connected</p>
+<p>✅ Vercel Ready</p>
+<p>✅ Google Sheet API Ready</p>
+<p>✅ Firebase Ready</p>
+</div>
+
+<div class="card">
+<h3>Modules</h3>
+<ul>
+<li>Callback Management</li>
+<li>Lead Assignment</li>
+<li>RM Dashboard</li>
+<li>Reports</li>
+<li>Runo Integration</li>
+</ul>
+</div>
+
+<div class="card">
+<button onclick="testAPI()">Test Google Sheet API</button>
+<p id="result"></p>
+</div>
+
+<script>
+
+async function testAPI(){
+
+const url =
+"https://script.google.com/macros/s/AKfycbyRhCCmsDPG8BYiAelOtfYwlCXEO-IKehRplGSYZIf-qp0yooyK_ec27Jf1L-LFLTf9/exec?action=getDashboard";
+
+const response = await fetch(url);
+const data = await response.json();
+
+document.getElementById("result").innerHTML =
+JSON.stringify(data,null,2);
+
+}
+
+</script>
+
+</body>
+</html>
