@@ -13,7 +13,6 @@ body{font-family:Arial,sans-serif;background:#f5f7fa;margin:0}
 .login-page{height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2563eb,#0f172a)}
 .login-box{background:white;padding:35px;border-radius:16px;width:380px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.2)}
 button{background:#2563eb;color:white;border:none;padding:10px 15px;border-radius:8px;cursor:pointer}
-.google-btn{width:100%;margin-top:15px}
 .app{display:none}
 .sidebar{width:240px;height:100vh;background:#0f172a;color:white;position:fixed;left:0;top:0;padding:20px}
 .sidebar h2{font-size:22px;margin-bottom:30px}
@@ -42,7 +41,7 @@ input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #cbd
   <div class="login-box">
     <h1>Volt Connect Hub</h1>
     <p>Smart Callback & Lead Management Platform</p>
-    <button class="google-btn" onclick="loginWithGoogle()">Login with Google</button>
+    <button onclick="loginWithGoogle()">Login with Google</button>
     <p id="error"></p>
   </div>
 </div>
@@ -133,7 +132,8 @@ input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #cbd
       <label>Remarks</label>
       <textarea id="cbRemarks" placeholder="Enter remarks"></textarea>
 
-      <button onclick="alert('Callback save API will be connected in next step')">Create Callback</button>
+      <button onclick="createCallback()">Create Callback</button>
+      <p id="callbackMsg" class="success"></p>
 
       <hr>
 
@@ -190,27 +190,19 @@ input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #cbd
       <label>Remarks</label>
       <textarea id="leadRemarks" placeholder="Enter remarks"></textarea>
 
-      <button onclick="alert('Lead save API will be connected in next step')">Create Lead</button>
+      <button onclick="createLead()">Create Lead</button>
+      <p id="leadMsg" class="success"></p>
     </div>
 
     <div id="reportSection" style="display:none" class="box">
       <h2>Reports</h2>
-      <p>Generate daily manager report from callback and Runo summary data.</p>
       <button onclick="generateDailyReport()">Generate Daily Report</button>
       <p id="reportMsg" class="success"></p>
-
-      <div class="cards">
-        <div class="card"><h3>Triggered Calls</h3><p id="reportTriggered">0</p></div>
-        <div class="card"><h3>Connected Calls</h3><p id="reportConnected">0</p></div>
-        <div class="card"><h3>Interested</h3><p id="reportInterested">0</p></div>
-      </div>
     </div>
 
     <div id="adminSection" style="display:none" class="box">
       <h2>Admin</h2>
-      <p>User roles are controlled from the User_Roles sheet.</p>
-      <p>Active = Yes means login allowed.</p>
-      <p>Active = No means login blocked.</p>
+      <p>User roles are controlled from User_Roles sheet.</p>
     </div>
 
   </div>
@@ -230,6 +222,8 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 
 const API_BASE = "https://script.google.com/macros/s/AKfycbyRhCCmsDPG8BYiAelOtfYwlCXEO-IKehRplGSYZIf-qp0yooyK_ec27Jf1L-LFLTf9/exec";
+
+let loggedUser = {};
 
 async function loginWithGoogle(){
   document.getElementById("error").innerText = "";
@@ -258,6 +252,8 @@ async function loginWithGoogle(){
       return;
     }
 
+    loggedUser = user;
+
     document.getElementById("loginPage").style.display = "none";
     document.getElementById("app").style.display = "block";
 
@@ -278,31 +274,16 @@ async function loginWithGoogle(){
 }
 
 function hideAllSections(){
-  const sections = [
-    "dashboardSection",
-    "callbackSection",
-    "leadSection",
-    "reportSection",
-    "adminSection"
-  ];
-
-  sections.forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.style.display = "none";
+  ["dashboardSection","callbackSection","leadSection","reportSection","adminSection"].forEach(id => {
+    document.getElementById(id).style.display = "none";
   });
 }
 
 function showSection(sectionId){
   hideAllSections();
   document.getElementById(sectionId).style.display = "block";
-
-  if(sectionId === "callbackSection"){
-    loadPendingCallbacks();
-  }
-
-  if(sectionId === "reportSection"){
-    loadDashboard();
-  }
+  if(sectionId === "callbackSection") loadPendingCallbacks();
+  if(sectionId === "reportSection") loadDashboard();
 }
 
 function showDashboard(){
@@ -317,27 +298,23 @@ async function loadDashboard(){
   const dash = await dashRes.json();
 
   if(dash.success){
-    document.getElementById("totalCallbacks").innerText = dash.data.totalCallbacks || 0;
-    document.getElementById("pendingCallbacks").innerText = dash.data.pendingCallbacks || 0;
-    document.getElementById("completedCallbacks").innerText = dash.data.completedCallbacks || 0;
-    document.getElementById("totalLeads").innerText = dash.data.totalLeads || 0;
-    document.getElementById("openLeads").innerText = dash.data.openLeads || 0;
-    document.getElementById("completedLeads").innerText = dash.data.completedLeads || 0;
+    totalCallbacks.innerText = dash.data.totalCallbacks || 0;
+    pendingCallbacks.innerText = dash.data.pendingCallbacks || 0;
+    completedCallbacks.innerText = dash.data.completedCallbacks || 0;
+    totalLeads.innerText = dash.data.totalLeads || 0;
+    openLeads.innerText = dash.data.openLeads || 0;
+    completedLeads.innerText = dash.data.completedLeads || 0;
   }
 
   const runoRes = await fetch(API_BASE + "?action=getRunoSummary");
   const runo = await runoRes.json();
 
   if(runo.success){
-    document.getElementById("overdueCallbacks").innerText = runo.data.overdueCallbacks || 0;
-    document.getElementById("triggeredCalls").innerText = runo.data.triggeredCalls || 0;
-    document.getElementById("connectedCalls").innerText = runo.data.connectedCalls || 0;
-    document.getElementById("notConnectedCalls").innerText = runo.data.notConnectedCalls || 0;
-    document.getElementById("interestedCustomers").innerText = runo.data.interestedCustomers || 0;
-
-    document.getElementById("reportTriggered").innerText = runo.data.triggeredCalls || 0;
-    document.getElementById("reportConnected").innerText = runo.data.connectedCalls || 0;
-    document.getElementById("reportInterested").innerText = runo.data.interestedCustomers || 0;
+    overdueCallbacks.innerText = runo.data.overdueCallbacks || 0;
+    triggeredCalls.innerText = runo.data.triggeredCalls || 0;
+    connectedCalls.innerText = runo.data.connectedCalls || 0;
+    notConnectedCalls.innerText = runo.data.notConnectedCalls || 0;
+    interestedCustomers.innerText = runo.data.interestedCustomers || 0;
   }
 }
 
@@ -345,20 +322,17 @@ async function loadPendingCallbacks(){
   const res = await fetch(API_BASE + "?action=getPendingCallbacks");
   const result = await res.json();
 
-  const dashboardTable = document.getElementById("pendingTable");
-  const callbackTable = document.getElementById("callbackPageTable");
-
-  dashboardTable.innerHTML = "";
-  callbackTable.innerHTML = "";
+  pendingTable.innerHTML = "";
+  callbackPageTable.innerHTML = "";
 
   if(!result.success || result.data.length === 0){
-    dashboardTable.innerHTML = "<tr><td colspan='7'>No pending callbacks found</td></tr>";
-    callbackTable.innerHTML = "<tr><td colspan='5'>No pending callbacks found</td></tr>";
+    pendingTable.innerHTML = "<tr><td colspan='7'>No pending callbacks found</td></tr>";
+    callbackPageTable.innerHTML = "<tr><td colspan='5'>No pending callbacks found</td></tr>";
     return;
   }
 
   result.data.forEach(row => {
-    dashboardTable.innerHTML += `
+    pendingTable.innerHTML += `
       <tr>
         <td>${row.callbackId || ""}</td>
         <td>${row.customerName || ""}</td>
@@ -367,19 +341,94 @@ async function loadPendingCallbacks(){
         <td>${row.status || ""}</td>
         <td>${row.runoCallStatus || ""}</td>
         <td>${row.runoDisposition || ""}</td>
-      </tr>
-    `;
+      </tr>`;
 
-    callbackTable.innerHTML += `
+    callbackPageTable.innerHTML += `
       <tr>
         <td>${row.callbackId || ""}</td>
         <td>${row.customerName || ""}</td>
         <td>${row.mobileNumber || ""}</td>
         <td>${row.assignedRM || ""}</td>
         <td>${row.status || ""}</td>
-      </tr>
-    `;
+      </tr>`;
   });
+}
+
+async function createCallback(){
+  const customerName = cbCustomerName.value.trim();
+  const mobileNumber = cbMobile.value.trim();
+  const pan = cbPan.value.trim();
+  const assignedRM = cbAssignedRM.value.trim();
+  const remarks = cbRemarks.value.trim();
+
+  if(!customerName || !mobileNumber || !assignedRM){
+    alert("Customer Name, Mobile Number and Assigned RM are required");
+    return;
+  }
+
+  const url = API_BASE
+    + "?action=createCallback"
+    + "&customerName=" + encodeURIComponent(customerName)
+    + "&mobileNumber=" + encodeURIComponent(mobileNumber)
+    + "&pan=" + encodeURIComponent(pan)
+    + "&assignedRM=" + encodeURIComponent(assignedRM)
+    + "&remarks=" + encodeURIComponent(remarks)
+    + "&createdBy=" + encodeURIComponent(loggedUser.email || "Dashboard");
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  if(data.success){
+    callbackMsg.innerText = "Callback created successfully. ID: " + data.callbackId;
+    cbCustomerName.value = "";
+    cbMobile.value = "";
+    cbPan.value = "";
+    cbAssignedRM.value = "";
+    cbRemarks.value = "";
+    loadDashboard();
+    loadPendingCallbacks();
+  }else{
+    alert(data.message || "Callback creation failed");
+  }
+}
+
+async function createLead(){
+  const customerName = leadCustomerName.value.trim();
+  const mobileNumber = leadMobile.value.trim();
+  const pan = leadPan.value.trim();
+  const requestType = leadType.value;
+  const assignedRM = leadAssignedRM.value.trim();
+  const remarks = leadRemarks.value.trim();
+
+  if(!customerName || !mobileNumber || !requestType || !assignedRM){
+    alert("Customer Name, Mobile Number, Request Type and Assigned RM are required");
+    return;
+  }
+
+  const url = API_BASE
+    + "?action=createLead"
+    + "&customerName=" + encodeURIComponent(customerName)
+    + "&mobileNumber=" + encodeURIComponent(mobileNumber)
+    + "&pan=" + encodeURIComponent(pan)
+    + "&requestType=" + encodeURIComponent(requestType)
+    + "&assignedRM=" + encodeURIComponent(assignedRM)
+    + "&remarks=" + encodeURIComponent(remarks)
+    + "&createdBy=" + encodeURIComponent(loggedUser.email || "Dashboard");
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  if(data.success){
+    leadMsg.innerText = "Lead created successfully. ID: " + data.requestId;
+    leadCustomerName.value = "";
+    leadMobile.value = "";
+    leadPan.value = "";
+    leadAssignedRM.value = "";
+    leadRemarks.value = "";
+    loadDashboard();
+  }else{
+    alert(data.message || "Lead creation failed");
+  }
 }
 
 async function generateDailyReport(){
@@ -387,10 +436,10 @@ async function generateDailyReport(){
   const result = await res.json();
 
   if(result.success){
-    document.getElementById("reportMsg").innerText = "Daily manager report generated successfully.";
+    reportMsg.innerText = "Daily manager report generated successfully.";
     loadDashboard();
   }else{
-    document.getElementById("reportMsg").innerText = "Report generation failed.";
+    reportMsg.innerText = "Report generation failed.";
   }
 }
 
