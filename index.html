@@ -9,147 +9,28 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
 <style>
-body{
-font-family:Arial,sans-serif;
-background:#f5f7fa;
-margin:0;
-}
-
-.login-page{
-height:100vh;
-display:flex;
-align-items:center;
-justify-content:center;
-background:linear-gradient(135deg,#2563eb,#0f172a);
-}
-
-.login-box{
-background:white;
-padding:35px;
-border-radius:16px;
-width:380px;
-text-align:center;
-box-shadow:0 10px 30px rgba(0,0,0,.2);
-}
-
-.login-box h1{
-margin-bottom:5px;
-color:#1e293b;
-}
-
-.login-box p{
-color:#64748b;
-}
-
-.google-btn{
-background:#2563eb;
-color:white;
-border:none;
-padding:12px 18px;
-border-radius:8px;
-cursor:pointer;
-font-size:15px;
-width:100%;
-margin-top:15px;
-}
-
-.app{
-display:none;
-}
-
-.sidebar{
-width:240px;
-height:100vh;
-background:#0f172a;
-color:white;
-position:fixed;
-left:0;
-top:0;
-padding:20px;
-}
-
-.sidebar h2{
-font-size:22px;
-margin-bottom:30px;
-}
-
-.menu{
-padding:12px;
-margin-bottom:8px;
-border-radius:8px;
-cursor:pointer;
-background:#1e293b;
-}
-
-.menu:hover{
-background:#2563eb;
-}
-
-.main{
-margin-left:280px;
-padding:25px;
-}
-
-.header{
-background:#2563eb;
-color:white;
-padding:20px;
-border-radius:12px;
-}
-
-.cards{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-gap:15px;
-margin-top:20px;
-}
-
-.card{
-background:white;
-padding:20px;
-border-radius:12px;
-box-shadow:0 2px 8px rgba(0,0,0,.1);
-}
-
-.card h3{
-margin:0;
-color:#475569;
-font-size:15px;
-}
-
-.card p{
-font-size:28px;
-font-weight:bold;
-margin:10px 0 0;
-color:#0f172a;
-}
-
-.user-info{
-background:white;
-padding:15px;
-border-radius:12px;
-margin-top:15px;
-}
-
-button{
-background:#2563eb;
-color:white;
-border:none;
-padding:10px 15px;
-border-radius:8px;
-cursor:pointer;
-}
-
-.logout{
-background:#dc2626;
-width:100%;
-margin-top:20px;
-}
-
-#error{
-color:red;
-margin-top:12px;
-}
+body{font-family:Arial,sans-serif;background:#f5f7fa;margin:0}
+.login-page{height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2563eb,#0f172a)}
+.login-box{background:white;padding:35px;border-radius:16px;width:380px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.google-btn,button{background:#2563eb;color:white;border:none;padding:10px 15px;border-radius:8px;cursor:pointer}
+.google-btn{width:100%;margin-top:15px}
+.app{display:none}
+.sidebar{width:240px;height:100vh;background:#0f172a;color:white;position:fixed;left:0;top:0;padding:20px}
+.sidebar h2{font-size:22px;margin-bottom:30px}
+.menu{padding:12px;margin-bottom:8px;border-radius:8px;cursor:pointer;background:#1e293b}
+.menu:hover{background:#2563eb}
+.logout{background:#dc2626;width:100%;margin-top:20px}
+.main{margin-left:280px;padding:25px}
+.header{background:#2563eb;color:white;padding:20px;border-radius:12px}
+.user-info,.card,.table-box{background:white;padding:18px;border-radius:12px;margin-top:15px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:15px;margin-top:20px}
+.card h3{margin:0;color:#475569;font-size:14px}
+.card p{font-size:28px;font-weight:bold;margin:10px 0 0;color:#0f172a}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{border-bottom:1px solid #e5e7eb;padding:10px;text-align:left;font-size:14px}
+th{background:#f1f5f9}
+#error{color:red;margin-top:12px}
+.success{color:green;margin-top:10px}
 </style>
 </head>
 
@@ -165,10 +46,9 @@ margin-top:12px;
 </div>
 
 <div class="app" id="app">
-
   <div class="sidebar">
     <h2>Volt Connect Hub</h2>
-    <div class="menu">Dashboard</div>
+    <div class="menu" onclick="showDashboard()">Dashboard</div>
     <div class="menu">Callback Management</div>
     <div class="menu">Lead Management</div>
     <div class="menu">Reports</div>
@@ -179,7 +59,7 @@ margin-top:12px;
   <div class="main">
     <div class="header">
       <h1>Dashboard</h1>
-      <p>Callback, Lead Assignment and RM Management</p>
+      <p>Callback, Lead Assignment, Runo Report and RM Tracking</p>
     </div>
 
     <div class="user-info">
@@ -190,38 +70,45 @@ margin-top:12px;
     </div>
 
     <div class="cards">
-      <div class="card">
-        <h3>Total Callbacks</h3>
-        <p id="totalCallbacks">0</p>
-      </div>
+      <div class="card"><h3>Total Callbacks</h3><p id="totalCallbacks">0</p></div>
+      <div class="card"><h3>Pending Callbacks</h3><p id="pendingCallbacks">0</p></div>
+      <div class="card"><h3>Overdue Callbacks</h3><p id="overdueCallbacks">0</p></div>
+      <div class="card"><h3>Triggered Calls</h3><p id="triggeredCalls">0</p></div>
+      <div class="card"><h3>Connected Calls</h3><p id="connectedCalls">0</p></div>
+      <div class="card"><h3>Not Connected</h3><p id="notConnectedCalls">0</p></div>
+      <div class="card"><h3>Interested Customers</h3><p id="interestedCustomers">0</p></div>
+      <div class="card"><h3>Total Leads</h3><p id="totalLeads">0</p></div>
+      <div class="card"><h3>Open Leads</h3><p id="openLeads">0</p></div>
+      <div class="card"><h3>Completed Leads</h3><p id="completedLeads">0</p></div>
+    </div>
 
-      <div class="card">
-        <h3>Pending Callbacks</h3>
-        <p id="pendingCallbacks">0</p>
-      </div>
+    <div class="table-box">
+      <h3>Pending Callback Requests</h3>
+      <button onclick="loadPendingCallbacks()">Refresh Pending Callbacks</button>
+      <table>
+        <thead>
+          <tr>
+            <th>Callback ID</th>
+            <th>Customer</th>
+            <th>Mobile</th>
+            <th>Assigned RM</th>
+            <th>Status</th>
+            <th>Runo Status</th>
+            <th>Disposition</th>
+          </tr>
+        </thead>
+        <tbody id="pendingTable">
+          <tr><td colspan="7">No data loaded</td></tr>
+        </tbody>
+      </table>
+    </div>
 
-      <div class="card">
-        <h3>Completed Callbacks</h3>
-        <p id="completedCallbacks">0</p>
-      </div>
-
-      <div class="card">
-        <h3>Total Leads</h3>
-        <p id="totalLeads">0</p>
-      </div>
-
-      <div class="card">
-        <h3>Open Leads</h3>
-        <p id="openLeads">0</p>
-      </div>
-
-      <div class="card">
-        <h3>Completed Leads</h3>
-        <p id="completedLeads">0</p>
-      </div>
+    <div class="table-box">
+      <h3>Daily Manager Report</h3>
+      <button onclick="generateDailyReport()">Generate Daily Report</button>
+      <p id="reportMsg" class="success"></p>
     </div>
   </div>
-
 </div>
 
 <script>
@@ -255,13 +142,13 @@ async function loginWithGoogle(){
     );
 
     if(!user){
-      document.getElementById("error").innerText = "Access denied. Your email is not added in User_Roles sheet.";
+      document.getElementById("error").innerText = "Access denied. Email not added in User_Roles sheet.";
       await auth.signOut();
       return;
     }
 
-    if(user.active.toLowerCase() !== "yes"){
-      document.getElementById("error").innerText = "Your access is disabled. Please contact admin.";
+    if(String(user.active).toLowerCase() !== "yes"){
+      document.getElementById("error").innerText = "Your access is disabled.";
       await auth.signOut();
       return;
     }
@@ -279,6 +166,7 @@ async function loginWithGoogle(){
     }
 
     loadDashboard();
+    loadPendingCallbacks();
 
   }catch(error){
     document.getElementById("error").innerText = error.message;
@@ -286,17 +174,72 @@ async function loginWithGoogle(){
 }
 
 async function loadDashboard(){
-  const response = await fetch(API_BASE + "?action=getDashboard");
-  const result = await response.json();
+  const dashRes = await fetch(API_BASE + "?action=getDashboard");
+  const dash = await dashRes.json();
+
+  if(dash.success){
+    document.getElementById("totalCallbacks").innerText = dash.data.totalCallbacks || 0;
+    document.getElementById("pendingCallbacks").innerText = dash.data.pendingCallbacks || 0;
+    document.getElementById("completedLeads").innerText = dash.data.completedLeads || 0;
+    document.getElementById("totalLeads").innerText = dash.data.totalLeads || 0;
+    document.getElementById("openLeads").innerText = dash.data.openLeads || 0;
+    document.getElementById("completedCallbacks").innerText = dash.data.completedCallbacks || 0;
+  }
+
+  const runoRes = await fetch(API_BASE + "?action=getRunoSummary");
+  const runo = await runoRes.json();
+
+  if(runo.success){
+    document.getElementById("overdueCallbacks").innerText = runo.data.overdueCallbacks || 0;
+    document.getElementById("triggeredCalls").innerText = runo.data.triggeredCalls || 0;
+    document.getElementById("connectedCalls").innerText = runo.data.connectedCalls || 0;
+    document.getElementById("notConnectedCalls").innerText = runo.data.notConnectedCalls || 0;
+    document.getElementById("interestedCustomers").innerText = runo.data.interestedCustomers || 0;
+  }
+}
+
+async function loadPendingCallbacks(){
+  const res = await fetch(API_BASE + "?action=getPendingCallbacks");
+  const result = await res.json();
+
+  const tbody = document.getElementById("pendingTable");
+  tbody.innerHTML = "";
+
+  if(!result.success || result.data.length === 0){
+    tbody.innerHTML = "<tr><td colspan='7'>No pending callbacks found</td></tr>";
+    return;
+  }
+
+  result.data.forEach(row => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${row.callbackId || ""}</td>
+        <td>${row.customerName || ""}</td>
+        <td>${row.mobileNumber || ""}</td>
+        <td>${row.assignedRM || ""}</td>
+        <td>${row.status || ""}</td>
+        <td>${row.runoCallStatus || ""}</td>
+        <td>${row.runoDisposition || ""}</td>
+      </tr>
+    `;
+  });
+}
+
+async function generateDailyReport(){
+  const res = await fetch(API_BASE + "?action=generateDailyManagerReport");
+  const result = await res.json();
 
   if(result.success){
-    document.getElementById("totalCallbacks").innerText = result.data.totalCallbacks;
-    document.getElementById("pendingCallbacks").innerText = result.data.pendingCallbacks;
-    document.getElementById("completedCallbacks").innerText = result.data.completedCallbacks;
-    document.getElementById("totalLeads").innerText = result.data.totalLeads;
-    document.getElementById("openLeads").innerText = result.data.openLeads;
-    document.getElementById("completedLeads").innerText = result.data.completedLeads;
+    document.getElementById("reportMsg").innerText = "Daily manager report generated successfully.";
+    loadDashboard();
+  }else{
+    document.getElementById("reportMsg").innerText = "Report generation failed.";
   }
+}
+
+function showDashboard(){
+  loadDashboard();
+  loadPendingCallbacks();
 }
 
 function logout(){
