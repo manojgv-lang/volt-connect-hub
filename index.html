@@ -12,7 +12,7 @@
 body{font-family:Arial,sans-serif;background:#f5f7fa;margin:0}
 .login-page{height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2563eb,#0f172a)}
 .login-box{background:white;padding:35px;border-radius:16px;width:380px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.2)}
-.google-btn,button{background:#2563eb;color:white;border:none;padding:10px 15px;border-radius:8px;cursor:pointer}
+button{background:#2563eb;color:white;border:none;padding:10px 15px;border-radius:8px;cursor:pointer}
 .google-btn{width:100%;margin-top:15px}
 .app{display:none}
 .sidebar{width:240px;height:100vh;background:#0f172a;color:white;position:fixed;left:0;top:0;padding:20px}
@@ -22,13 +22,15 @@ body{font-family:Arial,sans-serif;background:#f5f7fa;margin:0}
 .logout{background:#dc2626;width:100%;margin-top:20px}
 .main{margin-left:280px;padding:25px}
 .header{background:#2563eb;color:white;padding:20px;border-radius:12px}
-.user-info,.card,.table-box{background:white;padding:18px;border-radius:12px;margin-top:15px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.user-info,.card,.box{background:white;padding:18px;border-radius:12px;margin-top:15px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:15px;margin-top:20px}
 .card h3{margin:0;color:#475569;font-size:14px}
 .card p{font-size:28px;font-weight:bold;margin:10px 0 0;color:#0f172a}
 table{width:100%;border-collapse:collapse;margin-top:10px}
 th,td{border-bottom:1px solid #e5e7eb;padding:10px;text-align:left;font-size:14px}
 th{background:#f1f5f9}
+input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #cbd5e1;border-radius:8px}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
 #error{color:red;margin-top:12px}
 .success{color:green;margin-top:10px}
 </style>
@@ -46,13 +48,14 @@ th{background:#f1f5f9}
 </div>
 
 <div class="app" id="app">
+
   <div class="sidebar">
     <h2>Volt Connect Hub</h2>
     <div class="menu" onclick="showDashboard()">Dashboard</div>
-    <div class="menu">Callback Management</div>
-    <div class="menu">Lead Management</div>
-    <div class="menu">Reports</div>
-    <div class="menu" id="adminMenu">Admin</div>
+    <div class="menu" onclick="showSection('callbackSection')">Callback Management</div>
+    <div class="menu" onclick="showSection('leadSection')">Lead Management</div>
+    <div class="menu" onclick="showSection('reportSection')">Reports</div>
+    <div class="menu" id="adminMenu" onclick="showSection('adminSection')">Admin</div>
     <button class="logout" onclick="logout()">Logout</button>
   </div>
 
@@ -69,22 +72,73 @@ th{background:#f1f5f9}
       <b>Team:</b> <span id="userTeam"></span>
     </div>
 
-    <div class="cards">
-      <div class="card"><h3>Total Callbacks</h3><p id="totalCallbacks">0</p></div>
-      <div class="card"><h3>Pending Callbacks</h3><p id="pendingCallbacks">0</p></div>
-      <div class="card"><h3>Overdue Callbacks</h3><p id="overdueCallbacks">0</p></div>
-      <div class="card"><h3>Triggered Calls</h3><p id="triggeredCalls">0</p></div>
-      <div class="card"><h3>Connected Calls</h3><p id="connectedCalls">0</p></div>
-      <div class="card"><h3>Not Connected</h3><p id="notConnectedCalls">0</p></div>
-      <div class="card"><h3>Interested Customers</h3><p id="interestedCustomers">0</p></div>
-      <div class="card"><h3>Total Leads</h3><p id="totalLeads">0</p></div>
-      <div class="card"><h3>Open Leads</h3><p id="openLeads">0</p></div>
-      <div class="card"><h3>Completed Leads</h3><p id="completedLeads">0</p></div>
+    <div id="dashboardSection">
+      <div class="cards">
+        <div class="card"><h3>Total Callbacks</h3><p id="totalCallbacks">0</p></div>
+        <div class="card"><h3>Pending Callbacks</h3><p id="pendingCallbacks">0</p></div>
+        <div class="card"><h3>Overdue Callbacks</h3><p id="overdueCallbacks">0</p></div>
+        <div class="card"><h3>Triggered Calls</h3><p id="triggeredCalls">0</p></div>
+        <div class="card"><h3>Connected Calls</h3><p id="connectedCalls">0</p></div>
+        <div class="card"><h3>Not Connected</h3><p id="notConnectedCalls">0</p></div>
+        <div class="card"><h3>Interested Customers</h3><p id="interestedCustomers">0</p></div>
+        <div class="card"><h3>Total Leads</h3><p id="totalLeads">0</p></div>
+        <div class="card"><h3>Open Leads</h3><p id="openLeads">0</p></div>
+        <div class="card"><h3>Completed Leads</h3><p id="completedLeads">0</p></div>
+      </div>
+
+      <div class="box">
+        <h3>Pending Callback Requests</h3>
+        <button onclick="loadPendingCallbacks()">Refresh Pending Callbacks</button>
+        <table>
+          <thead>
+            <tr>
+              <th>Callback ID</th>
+              <th>Customer</th>
+              <th>Mobile</th>
+              <th>Assigned RM</th>
+              <th>Status</th>
+              <th>Runo Status</th>
+              <th>Disposition</th>
+            </tr>
+          </thead>
+          <tbody id="pendingTable">
+            <tr><td colspan="7">No data loaded</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <div class="table-box">
-      <h3>Pending Callback Requests</h3>
-      <button onclick="loadPendingCallbacks()">Refresh Pending Callbacks</button>
+    <div id="callbackSection" style="display:none" class="box">
+      <h2>Callback Management</h2>
+
+      <div class="form-grid">
+        <div>
+          <label>Customer Name</label>
+          <input id="cbCustomerName" placeholder="Enter customer name">
+        </div>
+        <div>
+          <label>Mobile Number</label>
+          <input id="cbMobile" placeholder="Enter mobile number">
+        </div>
+        <div>
+          <label>PAN / Loan ID</label>
+          <input id="cbPan" placeholder="Optional">
+        </div>
+        <div>
+          <label>Assigned RM</label>
+          <input id="cbAssignedRM" placeholder="Enter RM name">
+        </div>
+      </div>
+
+      <label>Remarks</label>
+      <textarea id="cbRemarks" placeholder="Enter remarks"></textarea>
+
+      <button onclick="alert('Callback save API will be connected in next step')">Create Callback</button>
+
+      <hr>
+
+      <h3>Pending Callbacks</h3>
+      <button onclick="loadPendingCallbacks()">Refresh</button>
       <table>
         <thead>
           <tr>
@@ -93,21 +147,72 @@ th{background:#f1f5f9}
             <th>Mobile</th>
             <th>Assigned RM</th>
             <th>Status</th>
-            <th>Runo Status</th>
-            <th>Disposition</th>
           </tr>
         </thead>
-        <tbody id="pendingTable">
-          <tr><td colspan="7">No data loaded</td></tr>
+        <tbody id="callbackPageTable">
+          <tr><td colspan="5">Click refresh to load</td></tr>
         </tbody>
       </table>
     </div>
 
-    <div class="table-box">
-      <h3>Daily Manager Report</h3>
+    <div id="leadSection" style="display:none" class="box">
+      <h2>Lead Management</h2>
+
+      <div class="form-grid">
+        <div>
+          <label>Customer Name</label>
+          <input id="leadCustomerName" placeholder="Enter customer name">
+        </div>
+        <div>
+          <label>Mobile Number</label>
+          <input id="leadMobile" placeholder="Enter mobile number">
+        </div>
+        <div>
+          <label>PAN / Loan ID</label>
+          <input id="leadPan" placeholder="Optional">
+        </div>
+        <div>
+          <label>Request Type</label>
+          <select id="leadType">
+            <option>Loan Creation</option>
+            <option>Application Support</option>
+            <option>Documentation Support</option>
+            <option>Pledge Assistance</option>
+            <option>General Follow-up</option>
+          </select>
+        </div>
+        <div>
+          <label>Assigned RM</label>
+          <input id="leadAssignedRM" placeholder="Enter RM name">
+        </div>
+      </div>
+
+      <label>Remarks</label>
+      <textarea id="leadRemarks" placeholder="Enter remarks"></textarea>
+
+      <button onclick="alert('Lead save API will be connected in next step')">Create Lead</button>
+    </div>
+
+    <div id="reportSection" style="display:none" class="box">
+      <h2>Reports</h2>
+      <p>Generate daily manager report from callback and Runo summary data.</p>
       <button onclick="generateDailyReport()">Generate Daily Report</button>
       <p id="reportMsg" class="success"></p>
+
+      <div class="cards">
+        <div class="card"><h3>Triggered Calls</h3><p id="reportTriggered">0</p></div>
+        <div class="card"><h3>Connected Calls</h3><p id="reportConnected">0</p></div>
+        <div class="card"><h3>Interested</h3><p id="reportInterested">0</p></div>
+      </div>
     </div>
+
+    <div id="adminSection" style="display:none" class="box">
+      <h2>Admin</h2>
+      <p>User roles are controlled from the User_Roles sheet.</p>
+      <p>Active = Yes means login allowed.</p>
+      <p>Active = No means login blocked.</p>
+    </div>
+
   </div>
 </div>
 
@@ -165,12 +270,46 @@ async function loginWithGoogle(){
       document.getElementById("adminMenu").style.display = "none";
     }
 
-    loadDashboard();
-    loadPendingCallbacks();
+    showDashboard();
 
   }catch(error){
     document.getElementById("error").innerText = error.message;
   }
+}
+
+function hideAllSections(){
+  const sections = [
+    "dashboardSection",
+    "callbackSection",
+    "leadSection",
+    "reportSection",
+    "adminSection"
+  ];
+
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = "none";
+  });
+}
+
+function showSection(sectionId){
+  hideAllSections();
+  document.getElementById(sectionId).style.display = "block";
+
+  if(sectionId === "callbackSection"){
+    loadPendingCallbacks();
+  }
+
+  if(sectionId === "reportSection"){
+    loadDashboard();
+  }
+}
+
+function showDashboard(){
+  hideAllSections();
+  document.getElementById("dashboardSection").style.display = "block";
+  loadDashboard();
+  loadPendingCallbacks();
 }
 
 async function loadDashboard(){
@@ -180,10 +319,10 @@ async function loadDashboard(){
   if(dash.success){
     document.getElementById("totalCallbacks").innerText = dash.data.totalCallbacks || 0;
     document.getElementById("pendingCallbacks").innerText = dash.data.pendingCallbacks || 0;
-    document.getElementById("completedLeads").innerText = dash.data.completedLeads || 0;
+    document.getElementById("completedCallbacks").innerText = dash.data.completedCallbacks || 0;
     document.getElementById("totalLeads").innerText = dash.data.totalLeads || 0;
     document.getElementById("openLeads").innerText = dash.data.openLeads || 0;
-    document.getElementById("completedCallbacks").innerText = dash.data.completedCallbacks || 0;
+    document.getElementById("completedLeads").innerText = dash.data.completedLeads || 0;
   }
 
   const runoRes = await fetch(API_BASE + "?action=getRunoSummary");
@@ -195,6 +334,10 @@ async function loadDashboard(){
     document.getElementById("connectedCalls").innerText = runo.data.connectedCalls || 0;
     document.getElementById("notConnectedCalls").innerText = runo.data.notConnectedCalls || 0;
     document.getElementById("interestedCustomers").innerText = runo.data.interestedCustomers || 0;
+
+    document.getElementById("reportTriggered").innerText = runo.data.triggeredCalls || 0;
+    document.getElementById("reportConnected").innerText = runo.data.connectedCalls || 0;
+    document.getElementById("reportInterested").innerText = runo.data.interestedCustomers || 0;
   }
 }
 
@@ -202,16 +345,20 @@ async function loadPendingCallbacks(){
   const res = await fetch(API_BASE + "?action=getPendingCallbacks");
   const result = await res.json();
 
-  const tbody = document.getElementById("pendingTable");
-  tbody.innerHTML = "";
+  const dashboardTable = document.getElementById("pendingTable");
+  const callbackTable = document.getElementById("callbackPageTable");
+
+  dashboardTable.innerHTML = "";
+  callbackTable.innerHTML = "";
 
   if(!result.success || result.data.length === 0){
-    tbody.innerHTML = "<tr><td colspan='7'>No pending callbacks found</td></tr>";
+    dashboardTable.innerHTML = "<tr><td colspan='7'>No pending callbacks found</td></tr>";
+    callbackTable.innerHTML = "<tr><td colspan='5'>No pending callbacks found</td></tr>";
     return;
   }
 
   result.data.forEach(row => {
-    tbody.innerHTML += `
+    dashboardTable.innerHTML += `
       <tr>
         <td>${row.callbackId || ""}</td>
         <td>${row.customerName || ""}</td>
@@ -220,6 +367,16 @@ async function loadPendingCallbacks(){
         <td>${row.status || ""}</td>
         <td>${row.runoCallStatus || ""}</td>
         <td>${row.runoDisposition || ""}</td>
+      </tr>
+    `;
+
+    callbackTable.innerHTML += `
+      <tr>
+        <td>${row.callbackId || ""}</td>
+        <td>${row.customerName || ""}</td>
+        <td>${row.mobileNumber || ""}</td>
+        <td>${row.assignedRM || ""}</td>
+        <td>${row.status || ""}</td>
       </tr>
     `;
   });
@@ -235,11 +392,6 @@ async function generateDailyReport(){
   }else{
     document.getElementById("reportMsg").innerText = "Report generation failed.";
   }
-}
-
-function showDashboard(){
-  loadDashboard();
-  loadPendingCallbacks();
 }
 
 function logout(){
