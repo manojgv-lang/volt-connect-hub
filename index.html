@@ -76,7 +76,7 @@ input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #cbd
         <div class="card"><h3>Total Callbacks</h3><p id="totalCallbacks">0</p></div>
         <div class="card"><h3>Pending Callbacks</h3><p id="pendingCallbacks">0</p></div>
         <div class="card"><h3>Overdue Callbacks</h3><p id="overdueCallbacks">0</p></div>
-        <div class="card"><h3>Triggered Calls</h3><p id="triggeredCalls">0</p></div>
+        <div class="card"><h3>Total Calls</h3><p id="totalCalls">0</p></div>
         <div class="card"><h3>Connected Calls</h3><p id="connectedCalls">0</p></div>
         <div class="card"><h3>Not Connected</h3><p id="notConnectedCalls">0</p></div>
         <div class="card"><h3>Interested Customers</h3><p id="interestedCustomers">0</p></div>
@@ -225,10 +225,10 @@ const API_BASE = "https://script.google.com/macros/s/AKfycbyRhCCmsDPG8BYiAelOtfY
 
 let loggedUser = {};
 
-async function loginWithGoogle(){
+async function loginWithGoogle() {
   document.getElementById("error").innerText = "";
 
-  try{
+  try {
     const provider = new firebase.auth.GoogleAuthProvider();
     const result = await auth.signInWithPopup(provider);
     const email = result.user.email;
@@ -240,13 +240,13 @@ async function loginWithGoogle(){
       u.email.toLowerCase().trim() === email.toLowerCase().trim()
     );
 
-    if(!user){
+    if (!user) {
       document.getElementById("error").innerText = "Access denied. Email not added in User_Roles sheet.";
       await auth.signOut();
       return;
     }
 
-    if(String(user.active).toLowerCase() !== "yes"){
+    if (String(user.active).toLowerCase() !== "yes") {
       document.getElementById("error").innerText = "Your access is disabled.";
       await auth.signOut();
       return;
@@ -262,77 +262,76 @@ async function loginWithGoogle(){
     document.getElementById("userRole").innerText = user.role;
     document.getElementById("userTeam").innerText = user.team;
 
-    if(user.role !== "Admin"){
+    if (user.role !== "Admin") {
       document.getElementById("adminMenu").style.display = "none";
     }
 
     showDashboard();
 
-  }catch(error){
+  } catch (error) {
     document.getElementById("error").innerText = error.message;
   }
 }
 
-function hideAllSections(){
-  ["dashboardSection","callbackSection","leadSection","reportSection","adminSection"].forEach(id => {
+function hideAllSections() {
+  ["dashboardSection", "callbackSection", "leadSection", "reportSection", "adminSection"].forEach(id => {
     document.getElementById(id).style.display = "none";
   });
 }
 
-function showSection(sectionId){
+function showSection(sectionId) {
   hideAllSections();
   document.getElementById(sectionId).style.display = "block";
-  if(sectionId === "callbackSection") loadPendingCallbacks();
-  if(sectionId === "reportSection") loadDashboard();
+  if (sectionId === "callbackSection") loadPendingCallbacks();
+  if (sectionId === "reportSection") loadDashboard();
 }
 
-function showDashboard(){
+function showDashboard() {
   hideAllSections();
   document.getElementById("dashboardSection").style.display = "block";
   loadDashboard();
   loadPendingCallbacks();
 }
 
-async function loadDashboard(){
+async function loadDashboard() {
   const dashRes = await fetch(API_BASE + "?action=getDashboard");
   const dash = await dashRes.json();
 
-  if(dash.success){
-    totalCallbacks.innerText = dash.data.totalCallbacks || 0;
-    pendingCallbacks.innerText = dash.data.pendingCallbacks || 0;
-    completedCallbacks.innerText = dash.data.completedCallbacks || 0;
-    totalLeads.innerText = dash.data.totalLeads || 0;
-    openLeads.innerText = dash.data.openLeads || 0;
-    completedLeads.innerText = dash.data.completedLeads || 0;
+  if (dash.success) {
+    document.getElementById("totalCallbacks").innerText = dash.data.totalCallbacks || 0;
+    document.getElementById("pendingCallbacks").innerText = dash.data.pendingCallbacks || 0;
+    document.getElementById("totalLeads").innerText = dash.data.totalLeads || 0;
+    document.getElementById("openLeads").innerText = dash.data.openLeads || 0;
+    document.getElementById("completedLeads").innerText = dash.data.completedLeads || 0;
   }
 
-  const runoRes = await fetch(API_BASE + "?action=getRunoSummary");
+  const runoRes = await fetch(API_BASE + "?action=getFilteredRunoSummary");
   const runo = await runoRes.json();
 
-  if(runo.success){
-    overdueCallbacks.innerText = runo.data.overdueCallbacks || 0;
-    triggeredCalls.innerText = runo.data.triggeredCalls || 0;
-    connectedCalls.innerText = runo.data.connectedCalls || 0;
-    notConnectedCalls.innerText = runo.data.notConnectedCalls || 0;
-    interestedCustomers.innerText = runo.data.interestedCustomers || 0;
+  if (runo.success) {
+    document.getElementById("overdueCallbacks").innerText = runo.data.overdueCallbacks || 0;
+    document.getElementById("totalCalls").innerText = runo.data.totalCalls || 0;
+    document.getElementById("connectedCalls").innerText = runo.data.connectedCalls || 0;
+    document.getElementById("notConnectedCalls").innerText = runo.data.notConnectedCalls || 0;
+    document.getElementById("interestedCustomers").innerText = runo.data.interestedCustomers || 0;
   }
 }
 
-async function loadPendingCallbacks(){
+async function loadPendingCallbacks() {
   const res = await fetch(API_BASE + "?action=getPendingCallbacks");
   const result = await res.json();
 
-  pendingTable.innerHTML = "";
-  callbackPageTable.innerHTML = "";
+  document.getElementById("pendingTable").innerHTML = "";
+  document.getElementById("callbackPageTable").innerHTML = "";
 
-  if(!result.success || result.data.length === 0){
-    pendingTable.innerHTML = "<tr><td colspan='7'>No pending callbacks found</td></tr>";
-    callbackPageTable.innerHTML = "<tr><td colspan='5'>No pending callbacks found</td></tr>";
+  if (!result.success || result.data.length === 0) {
+    document.getElementById("pendingTable").innerHTML = "<tr><td colspan='7'>No pending callbacks found</td></tr>";
+    document.getElementById("callbackPageTable").innerHTML = "<tr><td colspan='5'>No pending callbacks found</td></tr>";
     return;
   }
 
   result.data.forEach(row => {
-    pendingTable.innerHTML += `
+    document.getElementById("pendingTable").innerHTML += `
       <tr>
         <td>${row.callbackId || ""}</td>
         <td>${row.customerName || ""}</td>
@@ -343,7 +342,7 @@ async function loadPendingCallbacks(){
         <td>${row.runoDisposition || ""}</td>
       </tr>`;
 
-    callbackPageTable.innerHTML += `
+    document.getElementById("callbackPageTable").innerHTML += `
       <tr>
         <td>${row.callbackId || ""}</td>
         <td>${row.customerName || ""}</td>
@@ -354,14 +353,14 @@ async function loadPendingCallbacks(){
   });
 }
 
-async function createCallback(){
-  const customerName = cbCustomerName.value.trim();
-  const mobileNumber = cbMobile.value.trim();
-  const pan = cbPan.value.trim();
-  const assignedRM = cbAssignedRM.value.trim();
-  const remarks = cbRemarks.value.trim();
+async function createCallback() {
+  const customerName = document.getElementById("cbCustomerName").value.trim();
+  const mobileNumber = document.getElementById("cbMobile").value.trim();
+  const pan = document.getElementById("cbPan").value.trim();
+  const assignedRM = document.getElementById("cbAssignedRM").value.trim();
+  const remarks = document.getElementById("cbRemarks").value.trim();
 
-  if(!customerName || !mobileNumber || !assignedRM){
+  if (!customerName || !mobileNumber || !assignedRM) {
     alert("Customer Name, Mobile Number and Assigned RM are required");
     return;
   }
@@ -378,29 +377,29 @@ async function createCallback(){
   const res = await fetch(url);
   const data = await res.json();
 
-  if(data.success){
-    callbackMsg.innerText = "Callback created successfully. ID: " + data.callbackId;
-    cbCustomerName.value = "";
-    cbMobile.value = "";
-    cbPan.value = "";
-    cbAssignedRM.value = "";
-    cbRemarks.value = "";
+  if (data.success) {
+    document.getElementById("callbackMsg").innerText = "Callback created successfully. ID: " + data.callbackId;
+    document.getElementById("cbCustomerName").value = "";
+    document.getElementById("cbMobile").value = "";
+    document.getElementById("cbPan").value = "";
+    document.getElementById("cbAssignedRM").value = "";
+    document.getElementById("cbRemarks").value = "";
     loadDashboard();
     loadPendingCallbacks();
-  }else{
+  } else {
     alert(data.message || "Callback creation failed");
   }
 }
 
-async function createLead(){
-  const customerName = leadCustomerName.value.trim();
-  const mobileNumber = leadMobile.value.trim();
-  const pan = leadPan.value.trim();
-  const requestType = leadType.value;
-  const assignedRM = leadAssignedRM.value.trim();
-  const remarks = leadRemarks.value.trim();
+async function createLead() {
+  const customerName = document.getElementById("leadCustomerName").value.trim();
+  const mobileNumber = document.getElementById("leadMobile").value.trim();
+  const pan = document.getElementById("leadPan").value.trim();
+  const requestType = document.getElementById("leadType").value;
+  const assignedRM = document.getElementById("leadAssignedRM").value.trim();
+  const remarks = document.getElementById("leadRemarks").value.trim();
 
-  if(!customerName || !mobileNumber || !requestType || !assignedRM){
+  if (!customerName || !mobileNumber || !requestType || !assignedRM) {
     alert("Customer Name, Mobile Number, Request Type and Assigned RM are required");
     return;
   }
@@ -418,32 +417,32 @@ async function createLead(){
   const res = await fetch(url);
   const data = await res.json();
 
-  if(data.success){
-    leadMsg.innerText = "Lead created successfully. ID: " + data.requestId;
-    leadCustomerName.value = "";
-    leadMobile.value = "";
-    leadPan.value = "";
-    leadAssignedRM.value = "";
-    leadRemarks.value = "";
+  if (data.success) {
+    document.getElementById("leadMsg").innerText = "Lead created successfully. ID: " + data.requestId;
+    document.getElementById("leadCustomerName").value = "";
+    document.getElementById("leadMobile").value = "";
+    document.getElementById("leadPan").value = "";
+    document.getElementById("leadAssignedRM").value = "";
+    document.getElementById("leadRemarks").value = "";
     loadDashboard();
-  }else{
+  } else {
     alert(data.message || "Lead creation failed");
   }
 }
 
-async function generateDailyReport(){
+async function generateDailyReport() {
   const res = await fetch(API_BASE + "?action=generateDailyManagerReport");
   const result = await res.json();
 
-  if(result.success){
-    reportMsg.innerText = "Daily manager report generated successfully.";
+  if (result.success) {
+    document.getElementById("reportMsg").innerText = "Daily manager report generated successfully.";
     loadDashboard();
-  }else{
-    reportMsg.innerText = "Report generation failed.";
+  } else {
+    document.getElementById("reportMsg").innerText = "Report generation failed.";
   }
 }
 
-function logout(){
+function logout() {
   auth.signOut();
   location.reload();
 }
