@@ -30,8 +30,9 @@ th,td{border-bottom:1px solid #e5e7eb;padding:10px;text-align:left;font-size:14p
 th{background:#f1f5f9}
 input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #cbd5e1;border-radius:8px}
 .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
-#error{color:red;margin-top:12px}
 .success{color:green;margin-top:10px}
+#error{color:red}
+.alert{background:#fff7ed;border-left:5px solid #f97316;padding:12px;border-radius:8px;margin-top:10px}
 </style>
 </head>
 
@@ -53,7 +54,7 @@ input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #cbd
     <div class="menu" onclick="showDashboard()">Dashboard</div>
     <div class="menu" onclick="showSection('callbackSection')">Callback Management</div>
     <div class="menu" onclick="showSection('leadSection')">Lead Management</div>
-    <div class="menu" onclick="showSection('reportSection')">Reports</div>
+    <div class="menu" onclick="showReports()">Reports</div>
     <div class="menu" id="adminMenu" onclick="showSection('adminSection')">Admin</div>
     <button class="logout" onclick="logout()">Logout</button>
   </div>
@@ -72,6 +73,13 @@ input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #cbd
     </div>
 
     <div id="dashboardSection">
+      <div class="box">
+        <button onclick="syncRuno()">Sync Runo Report</button>
+        <button onclick="checkReminders()">Check Reminders</button>
+        <p id="syncMsg" class="success"></p>
+        <div id="reminderBox"></div>
+      </div>
+
       <div class="cards">
         <div class="card"><h3>Total Callbacks</h3><p id="totalCallbacks">0</p></div>
         <div class="card"><h3>Pending Callbacks</h3><p id="pendingCallbacks">0</p></div>
@@ -111,32 +119,21 @@ input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #cbd
       <h2>Callback Management</h2>
 
       <div class="form-grid">
-        <div>
-          <label>Customer Name</label>
-          <input id="cbCustomerName" placeholder="Enter customer name">
-        </div>
-        <div>
-          <label>Mobile Number</label>
-          <input id="cbMobile" placeholder="Enter mobile number">
-        </div>
-        <div>
-          <label>PAN / Loan ID</label>
-          <input id="cbPan" placeholder="Optional">
-        </div>
-        <div>
-          <label>Assigned RM</label>
-          <input id="cbAssignedRM" placeholder="Enter RM name">
-        </div>
+        <div><label>Customer Name</label><input id="cbCustomerName"></div>
+        <div><label>Mobile Number</label><input id="cbMobile"></div>
+        <div><label>PAN / Loan ID</label><input id="cbPan"></div>
+        <div><label>Assigned RM</label><input id="cbAssignedRM"></div>
+        <div><label>Reminder Date</label><input type="date" id="cbReminderDate"></div>
+        <div><label>Reminder Time</label><input type="time" id="cbReminderTime"></div>
       </div>
 
       <label>Remarks</label>
-      <textarea id="cbRemarks" placeholder="Enter remarks"></textarea>
+      <textarea id="cbRemarks"></textarea>
 
       <button onclick="createCallback()">Create Callback</button>
       <p id="callbackMsg" class="success"></p>
 
       <hr>
-
       <h3>Pending Callbacks</h3>
       <button onclick="loadPendingCallbacks()">Refresh</button>
       <table>
@@ -159,18 +156,9 @@ input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #cbd
       <h2>Lead Management</h2>
 
       <div class="form-grid">
-        <div>
-          <label>Customer Name</label>
-          <input id="leadCustomerName" placeholder="Enter customer name">
-        </div>
-        <div>
-          <label>Mobile Number</label>
-          <input id="leadMobile" placeholder="Enter mobile number">
-        </div>
-        <div>
-          <label>PAN / Loan ID</label>
-          <input id="leadPan" placeholder="Optional">
-        </div>
+        <div><label>Customer Name</label><input id="leadCustomerName"></div>
+        <div><label>Mobile Number</label><input id="leadMobile"></div>
+        <div><label>PAN / Loan ID</label><input id="leadPan"></div>
         <div>
           <label>Request Type</label>
           <select id="leadType">
@@ -181,14 +169,11 @@ input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #cbd
             <option>General Follow-up</option>
           </select>
         </div>
-        <div>
-          <label>Assigned RM</label>
-          <input id="leadAssignedRM" placeholder="Enter RM name">
-        </div>
+        <div><label>Assigned RM</label><input id="leadAssignedRM"></div>
       </div>
 
       <label>Remarks</label>
-      <textarea id="leadRemarks" placeholder="Enter remarks"></textarea>
+      <textarea id="leadRemarks"></textarea>
 
       <button onclick="createLead()">Create Lead</button>
       <p id="leadMsg" class="success"></p>
@@ -196,8 +181,25 @@ input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #cbd
 
     <div id="reportSection" style="display:none" class="box">
       <h2>Reports</h2>
-      <button onclick="generateDailyReport()">Generate Daily Report</button>
+      <button onclick="syncRuno()">Sync Runo Report</button>
+      <button onclick="loadReports()">View Report</button>
       <p id="reportMsg" class="success"></p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>RM Name</th>
+            <th>Total Calls</th>
+            <th>Connected</th>
+            <th>Not Connected</th>
+            <th>Interested</th>
+            <th>Pending Callbacks</th>
+          </tr>
+        </thead>
+        <tbody id="reportTable">
+          <tr><td colspan="6">Click View Report</td></tr>
+        </tbody>
+      </table>
     </div>
 
     <div id="adminSection" style="display:none" class="box">
@@ -225,10 +227,10 @@ const API_BASE = "https://script.google.com/macros/s/AKfycbyRhCCmsDPG8BYiAelOtfY
 
 let loggedUser = {};
 
-async function loginWithGoogle() {
+async function loginWithGoogle(){
   document.getElementById("error").innerText = "";
 
-  try {
+  try{
     const provider = new firebase.auth.GoogleAuthProvider();
     const result = await auth.signInWithPopup(provider);
     const email = result.user.email;
@@ -240,13 +242,13 @@ async function loginWithGoogle() {
       u.email.toLowerCase().trim() === email.toLowerCase().trim()
     );
 
-    if (!user) {
+    if(!user){
       document.getElementById("error").innerText = "Access denied. Email not added in User_Roles sheet.";
       await auth.signOut();
       return;
     }
 
-    if (String(user.active).toLowerCase() !== "yes") {
+    if(String(user.active).toLowerCase() !== "yes"){
       document.getElementById("error").innerText = "Your access is disabled.";
       await auth.signOut();
       return;
@@ -254,84 +256,157 @@ async function loginWithGoogle() {
 
     loggedUser = user;
 
-    document.getElementById("loginPage").style.display = "none";
-    document.getElementById("app").style.display = "block";
+    loginPage.style.display = "none";
+    app.style.display = "block";
 
-    document.getElementById("userName").innerText = user.name;
-    document.getElementById("userEmail").innerText = user.email;
-    document.getElementById("userRole").innerText = user.role;
-    document.getElementById("userTeam").innerText = user.team;
+    userName.innerText = user.name;
+    userEmail.innerText = user.email;
+    userRole.innerText = user.role;
+    userTeam.innerText = user.team;
 
-    if (user.role !== "Admin") {
-      document.getElementById("adminMenu").style.display = "none";
+    if(user.role !== "Admin"){
+      adminMenu.style.display = "none";
     }
 
     showDashboard();
 
-  } catch (error) {
-    document.getElementById("error").innerText = error.message;
+  }catch(error){
+    error.innerText = error.message;
   }
 }
 
-function hideAllSections() {
-  ["dashboardSection", "callbackSection", "leadSection", "reportSection", "adminSection"].forEach(id => {
-    document.getElementById(id).style.display = "none";
+function hideAllSections(){
+  ["dashboardSection","callbackSection","leadSection","reportSection","adminSection"].forEach(id=>{
+    document.getElementById(id).style.display="none";
   });
 }
 
-function showSection(sectionId) {
+function showSection(id){
   hideAllSections();
-  document.getElementById(sectionId).style.display = "block";
-  if (sectionId === "callbackSection") loadPendingCallbacks();
-  if (sectionId === "reportSection") loadDashboard();
+  document.getElementById(id).style.display="block";
 }
 
-function showDashboard() {
-  hideAllSections();
-  document.getElementById("dashboardSection").style.display = "block";
+function showDashboard(){
+  showSection("dashboardSection");
   loadDashboard();
   loadPendingCallbacks();
 }
 
-async function loadDashboard() {
+function showReports(){
+  showSection("reportSection");
+  loadReports();
+}
+
+async function loadDashboard(){
   const dashRes = await fetch(API_BASE + "?action=getDashboard");
   const dash = await dashRes.json();
 
-  if (dash.success) {
-    document.getElementById("totalCallbacks").innerText = dash.data.totalCallbacks || 0;
-    document.getElementById("pendingCallbacks").innerText = dash.data.pendingCallbacks || 0;
-    document.getElementById("totalLeads").innerText = dash.data.totalLeads || 0;
-    document.getElementById("openLeads").innerText = dash.data.openLeads || 0;
-    document.getElementById("completedLeads").innerText = dash.data.completedLeads || 0;
+  if(dash.success){
+    totalCallbacks.innerText = dash.data.totalCallbacks || 0;
+    pendingCallbacks.innerText = dash.data.pendingCallbacks || 0;
+    totalLeads.innerText = dash.data.totalLeads || 0;
+    openLeads.innerText = dash.data.openLeads || 0;
+    completedLeads.innerText = dash.data.completedLeads || 0;
   }
 
   const runoRes = await fetch(API_BASE + "?action=getFilteredRunoSummary");
   const runo = await runoRes.json();
 
-  if (runo.success) {
-    document.getElementById("overdueCallbacks").innerText = runo.data.overdueCallbacks || 0;
-    document.getElementById("totalCalls").innerText = runo.data.totalCalls || 0;
-    document.getElementById("connectedCalls").innerText = runo.data.connectedCalls || 0;
-    document.getElementById("notConnectedCalls").innerText = runo.data.notConnectedCalls || 0;
-    document.getElementById("interestedCustomers").innerText = runo.data.interestedCustomers || 0;
+  if(runo.success){
+    totalCalls.innerText = runo.data.totalCalls || 0;
+    connectedCalls.innerText = runo.data.connectedCalls || 0;
+    notConnectedCalls.innerText = runo.data.notConnectedCalls || 0;
+    interestedCustomers.innerText = runo.data.interestedCustomers || 0;
   }
 }
 
-async function loadPendingCallbacks() {
-  const res = await fetch(API_BASE + "?action=getPendingCallbacks");
+async function syncRuno(){
+  syncMsg.innerText = "Syncing Runo report...";
+  reportMsg.innerText = "Syncing Runo report...";
+
+  const res = await fetch(API_BASE + "?action=syncRunoCallLogs");
+  const data = await res.json();
+
+  if(data.success){
+    syncMsg.innerText = "Runo synced successfully. Records: " + data.total;
+    reportMsg.innerText = "Runo synced successfully. Records: " + data.total;
+    loadDashboard();
+    loadReports();
+  }else{
+    syncMsg.innerText = data.message || "Sync failed";
+    reportMsg.innerText = data.message || "Sync failed";
+  }
+}
+
+async function loadReports(){
+  const res = await fetch(API_BASE + "?action=getReportData");
   const result = await res.json();
 
-  document.getElementById("pendingTable").innerHTML = "";
-  document.getElementById("callbackPageTable").innerHTML = "";
+  reportTable.innerHTML = "";
 
-  if (!result.success || result.data.length === 0) {
-    document.getElementById("pendingTable").innerHTML = "<tr><td colspan='7'>No pending callbacks found</td></tr>";
-    document.getElementById("callbackPageTable").innerHTML = "<tr><td colspan='5'>No pending callbacks found</td></tr>";
+  if(!result.success || result.data.length === 0){
+    reportTable.innerHTML = "<tr><td colspan='6'>No report data found</td></tr>";
     return;
   }
 
-  result.data.forEach(row => {
-    document.getElementById("pendingTable").innerHTML += `
+  result.data.forEach(r=>{
+    reportTable.innerHTML += `
+      <tr>
+        <td>${r.rmName || ""}</td>
+        <td>${r.totalCalls || 0}</td>
+        <td>${r.connected || 0}</td>
+        <td>${r.notConnected || 0}</td>
+        <td>${r.interested || 0}</td>
+        <td>${r.pendingCallbacks || 0}</td>
+      </tr>`;
+  });
+}
+
+async function checkReminders(){
+  reminderBox.innerHTML = "";
+
+  const rm = encodeURIComponent(loggedUser.name || "");
+  const res = await fetch(API_BASE + "?action=getDueReminders&rm=" + rm);
+  const result = await res.json();
+
+  if(!result.success || result.data.length === 0){
+    reminderBox.innerHTML = "<div class='alert'>No pending reminders found.</div>";
+    return;
+  }
+
+  result.data.forEach(r=>{
+    reminderBox.innerHTML += `
+      <div class="alert">
+        <b>Callback Reminder</b><br>
+        Customer: ${r.customerName}<br>
+        Mobile: ${r.mobileNumber}<br>
+        RM: ${r.assignedRM}<br>
+        Reminder: ${r.reminderDate} ${r.reminderTime}<br>
+        <button onclick="markSeen('${r.callbackId}')">Mark Seen</button>
+      </div>`;
+  });
+}
+
+async function markSeen(callbackId){
+  await fetch(API_BASE + "?action=markNotificationSeen&callbackId=" + encodeURIComponent(callbackId));
+  checkReminders();
+}
+
+async function loadPendingCallbacks(){
+  const res = await fetch(API_BASE + "?action=getPendingCallbacks");
+  const result = await res.json();
+
+  pendingTable.innerHTML = "";
+  callbackPageTable.innerHTML = "";
+
+  if(!result.success || result.data.length === 0){
+    pendingTable.innerHTML = "<tr><td colspan='7'>No pending callbacks found</td></tr>";
+    callbackPageTable.innerHTML = "<tr><td colspan='5'>No pending callbacks found</td></tr>";
+    return;
+  }
+
+  result.data.forEach(row=>{
+    pendingTable.innerHTML += `
       <tr>
         <td>${row.callbackId || ""}</td>
         <td>${row.customerName || ""}</td>
@@ -342,7 +417,7 @@ async function loadPendingCallbacks() {
         <td>${row.runoDisposition || ""}</td>
       </tr>`;
 
-    document.getElementById("callbackPageTable").innerHTML += `
+    callbackPageTable.innerHTML += `
       <tr>
         <td>${row.callbackId || ""}</td>
         <td>${row.customerName || ""}</td>
@@ -353,14 +428,16 @@ async function loadPendingCallbacks() {
   });
 }
 
-async function createCallback() {
-  const customerName = document.getElementById("cbCustomerName").value.trim();
-  const mobileNumber = document.getElementById("cbMobile").value.trim();
-  const pan = document.getElementById("cbPan").value.trim();
-  const assignedRM = document.getElementById("cbAssignedRM").value.trim();
-  const remarks = document.getElementById("cbRemarks").value.trim();
+async function createCallback(){
+  const customerName = cbCustomerName.value.trim();
+  const mobileNumber = cbMobile.value.trim();
+  const pan = cbPan.value.trim();
+  const assignedRM = cbAssignedRM.value.trim();
+  const remarks = cbRemarks.value.trim();
+  const reminderDate = cbReminderDate.value;
+  const reminderTime = cbReminderTime.value;
 
-  if (!customerName || !mobileNumber || !assignedRM) {
+  if(!customerName || !mobileNumber || !assignedRM){
     alert("Customer Name, Mobile Number and Assigned RM are required");
     return;
   }
@@ -372,34 +449,38 @@ async function createCallback() {
     + "&pan=" + encodeURIComponent(pan)
     + "&assignedRM=" + encodeURIComponent(assignedRM)
     + "&remarks=" + encodeURIComponent(remarks)
+    + "&reminderDate=" + encodeURIComponent(reminderDate)
+    + "&reminderTime=" + encodeURIComponent(reminderTime)
     + "&createdBy=" + encodeURIComponent(loggedUser.email || "Dashboard");
 
   const res = await fetch(url);
   const data = await res.json();
 
-  if (data.success) {
-    document.getElementById("callbackMsg").innerText = "Callback created successfully. ID: " + data.callbackId;
-    document.getElementById("cbCustomerName").value = "";
-    document.getElementById("cbMobile").value = "";
-    document.getElementById("cbPan").value = "";
-    document.getElementById("cbAssignedRM").value = "";
-    document.getElementById("cbRemarks").value = "";
+  if(data.success){
+    callbackMsg.innerText = "Callback created successfully. ID: " + data.callbackId;
+    cbCustomerName.value="";
+    cbMobile.value="";
+    cbPan.value="";
+    cbAssignedRM.value="";
+    cbRemarks.value="";
+    cbReminderDate.value="";
+    cbReminderTime.value="";
     loadDashboard();
     loadPendingCallbacks();
-  } else {
+  }else{
     alert(data.message || "Callback creation failed");
   }
 }
 
-async function createLead() {
-  const customerName = document.getElementById("leadCustomerName").value.trim();
-  const mobileNumber = document.getElementById("leadMobile").value.trim();
-  const pan = document.getElementById("leadPan").value.trim();
-  const requestType = document.getElementById("leadType").value;
-  const assignedRM = document.getElementById("leadAssignedRM").value.trim();
-  const remarks = document.getElementById("leadRemarks").value.trim();
+async function createLead(){
+  const customerName = leadCustomerName.value.trim();
+  const mobileNumber = leadMobile.value.trim();
+  const pan = leadPan.value.trim();
+  const requestType = leadType.value;
+  const assignedRM = leadAssignedRM.value.trim();
+  const remarks = leadRemarks.value.trim();
 
-  if (!customerName || !mobileNumber || !requestType || !assignedRM) {
+  if(!customerName || !mobileNumber || !requestType || !assignedRM){
     alert("Customer Name, Mobile Number, Request Type and Assigned RM are required");
     return;
   }
@@ -417,32 +498,20 @@ async function createLead() {
   const res = await fetch(url);
   const data = await res.json();
 
-  if (data.success) {
-    document.getElementById("leadMsg").innerText = "Lead created successfully. ID: " + data.requestId;
-    document.getElementById("leadCustomerName").value = "";
-    document.getElementById("leadMobile").value = "";
-    document.getElementById("leadPan").value = "";
-    document.getElementById("leadAssignedRM").value = "";
-    document.getElementById("leadRemarks").value = "";
+  if(data.success){
+    leadMsg.innerText = "Lead created successfully. ID: " + data.requestId;
+    leadCustomerName.value="";
+    leadMobile.value="";
+    leadPan.value="";
+    leadAssignedRM.value="";
+    leadRemarks.value="";
     loadDashboard();
-  } else {
+  }else{
     alert(data.message || "Lead creation failed");
   }
 }
 
-async function generateDailyReport() {
-  const res = await fetch(API_BASE + "?action=generateDailyManagerReport");
-  const result = await res.json();
-
-  if (result.success) {
-    document.getElementById("reportMsg").innerText = "Daily manager report generated successfully.";
-    loadDashboard();
-  } else {
-    document.getElementById("reportMsg").innerText = "Report generation failed.";
-  }
-}
-
-function logout() {
+function logout(){
   auth.signOut();
   location.reload();
 }
